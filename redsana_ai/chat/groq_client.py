@@ -2,29 +2,35 @@ import json
 import urllib.error
 import urllib.request
 
-from app.core.chat_engine import ChatEngine, ChatEngineError, ChatTurn
-from app.core.config import Settings, get_settings
+from redsana_ai.chat.engine import ChatEngine, ChatEngineError, ChatTurn
 
-GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions"
+DEFAULT_GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions"
+# Cloudflare, delante de Groq, devuelve 403 con el User-Agent por defecto de urllib.
+DEFAULT_USER_AGENT = "Mozilla/5.0 (compatible; RedSana-backend/1.0)"
 
 
 class GroqClientError(ChatEngineError):
     pass
 
 
-def get_chat_engine() -> ChatEngine:
-    # Va separada del constructor para poder reemplazarla en las pruebas sin llamar a la API real de Groq.
-    return GroqClient(get_settings())
-
-
 class GroqClient(ChatEngine):
     """Única clase que habla HTTP con Groq (con urllib de la stdlib); el resto del dominio no conoce ese detalle."""
 
-    def __init__(self, settings: Settings) -> None:
-        self._api_key = settings.groq_api_key
-        self._model = settings.groq_model
-        self._timeout_seconds = settings.groq_timeout_seconds
-        self._temperature = settings.groq_temperature
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        timeout_seconds: float,
+        temperature: float,
+        api_url: str = DEFAULT_GROQ_CHAT_COMPLETIONS_URL,
+        user_agent: str = DEFAULT_USER_AGENT,
+    ) -> None:
+        self._api_key = api_key
+        self._model = model
+        self._timeout_seconds = timeout_seconds
+        self._temperature = temperature
+        self._api_url = api_url
+        self._user_agent = user_agent
 
     def complete(self, system_prompt: str, turns: list[ChatTurn]) -> str:
         body = {
@@ -34,14 +40,13 @@ class GroqClient(ChatEngine):
             + [{"role": turn.role, "content": turn.content} for turn in turns],
         }
         request = urllib.request.Request(
-            url=GROQ_CHAT_COMPLETIONS_URL,
+            url=self._api_url,
             data=json.dumps(body).encode("utf-8"),
             method="POST",
             headers={
                 "Authorization": f"Bearer {self._api_key}",
                 "Content-Type": "application/json",
-                # Cloudflare, delante de Groq, devuelve 403 con el User-Agent por defecto de urllib.
-                "User-Agent": "Mozilla/5.0 (compatible; RedSana-backend/1.0)",
+                "User-Agent": self._user_agent,
             },
         )
         try:

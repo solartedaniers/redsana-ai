@@ -1,9 +1,9 @@
-import uuid
+from abc import ABC, abstractmethod
 from typing import Literal
 
-from app.core.chat_engine import ChatEngine, ChatTurn
-from app.domain.assistant_reply import to_plain_text
-from app.services.security_chat_prompt_builder import SecurityChatPromptBuilder
+from redsana_ai.assistant.prompt import build_system_prompt
+from redsana_ai.assistant.reply_guard import to_plain_text
+from redsana_ai.chat.engine import ChatEngine, ChatTurn
 
 BriefingLanguage = Literal["es", "en"]
 
@@ -24,14 +24,21 @@ cifrado WiFi debil, respuestas debiles del cuestionario), y como solucionar cada
 Usa UNICAMENTE los "Datos actuales del usuario"; no inventes hallazgos. Se breve."""
 
 
-class SecurityBriefingService:
-    """Redacta el mensaje inicial tras una evaluación; guardarlo es trabajo de ChatConversationService."""
+class SecurityBriefing(ABC):
+    """Interfaz del mensaje inicial tras una evaluación; guardarlo es trabajo de quien llama."""
 
-    def __init__(self, engine: ChatEngine, prompt_builder: SecurityChatPromptBuilder) -> None:
+    @abstractmethod
+    def write(self, user_context: str, language: BriefingLanguage) -> str:
+        """user_context: los datos reales del usuario ya armados, con su evaluación más reciente."""
+
+
+class EngineSecurityBriefing(SecurityBriefing):
+    """Redacta el resumen con el modelo a partir de las reglas del asistente y los datos reales."""
+
+    def __init__(self, engine: ChatEngine) -> None:
         self._engine = engine
-        self._prompt_builder = prompt_builder
 
-    def write(self, owner_id: uuid.UUID, language: BriefingLanguage) -> str:
-        system_prompt = self._prompt_builder.build(owner_id, topic="assessment_briefing")
+    def write(self, user_context: str, language: BriefingLanguage) -> str:
+        system_prompt = build_system_prompt(user_context)
         request = _BRIEFING_REQUEST.format(language=_LANGUAGE_NAMES[language])
         return to_plain_text(self._engine.complete(system_prompt, [ChatTurn("user", request)]))

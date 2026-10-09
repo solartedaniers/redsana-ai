@@ -1,10 +1,6 @@
-import uuid
+from collections.abc import Sequence
 
-from app.domain.chat_topic import ChatTopic
-from app.domain.family_mode import FAMILY_DNS_PRIMARY, FAMILY_DNS_SECONDARY, FAMILY_MODE_GUIDE_STEPS
-from app.services.security_chat_context_service import SecurityChatContextBuilder
-
-# El alcance del asistente se controla aquí, en el system prompt; router_password_guard es privacidad, no alcance.
+# El alcance del asistente se controla aquí, en el system prompt; el filtro de contraseñas del backend es privacidad, no alcance.
 SECURITY_ASSISTANT_SYSTEM_PROMPT = """\
 Eres el asistente de seguridad de RedSana. RedSana es una aplicacion -de escritorio \
 y web- PENSADA PARA monitorear y diagnosticar redes domesticas. La app de escritorio \
@@ -52,29 +48,22 @@ sobre su red real que NO esta en esos datos, dilo explicitamente -"no tengo ese 
 en vez de inventar una respuesta que suene plausible.\
 """
 
-_FAMILY_MODE_CONTEXT = (
-    "Tema de esta conversacion: activar el MODO FAMILIAR (DNS con filtro de contenido de "
-    f"Cloudflare for Families: primario {FAMILY_DNS_PRIMARY}, secundario {FAMILY_DNS_SECONDARY}; "
-    "bloquea contenido para adultos y malware, ningun filtro es perfecto). La app NO cambia el "
-    "DNS por el usuario: el lo hace en el panel de su router. Pasos de la guia de la app:\n"
-    + "\n".join(f"{number}. {step}" for number, step in enumerate(FAMILY_MODE_GUIDE_STEPS, start=1))
-    + "\nGuialo paso a paso adaptando los nombres de menus a la marca de su router si te la dice "
-    "(TP-Link, Huawei, ZTE, etc.); si no la sabes, preguntasela. Si su router no permite cambiar "
-    "el DNS, explicale como ponerlo en cada dispositivo."
-)
 
-_TOPIC_CONTEXTS: dict[ChatTopic, str] = {
-    "family_mode": _FAMILY_MODE_CONTEXT,
-}
+def family_mode_topic_context(primary_dns: str, secondary_dns: str, guide_steps: Sequence[str]) -> str:
+    """Contexto del tema Modo familiar; los DNS y los pasos los pone quien llama (son la guía que ve el usuario)."""
+    return (
+        "Tema de esta conversacion: activar el MODO FAMILIAR (DNS con filtro de contenido de "
+        f"Cloudflare for Families: primario {primary_dns}, secundario {secondary_dns}; "
+        "bloquea contenido para adultos y malware, ningun filtro es perfecto). La app NO cambia el "
+        "DNS por el usuario: el lo hace en el panel de su router. Pasos de la guia de la app:\n"
+        + "\n".join(f"{number}. {step}" for number, step in enumerate(guide_steps, start=1))
+        + "\nGuialo paso a paso adaptando los nombres de menus a la marca de su router si te la dice "
+        "(TP-Link, Huawei, ZTE, etc.); si no la sabes, preguntasela. Si su router no permite cambiar "
+        "el DNS, explicale como ponerlo en cada dispositivo."
+    )
 
 
-class SecurityChatPromptBuilder:
+def build_system_prompt(user_context: str, topic_context: str | None = None) -> str:
     """Arma el system prompt completo (reglas, datos reales y tema); lo comparten el chat y el resumen inicial."""
-
-    def __init__(self, context_builder: SecurityChatContextBuilder) -> None:
-        self._context_builder = context_builder
-
-    def build(self, owner_id: uuid.UUID, topic: ChatTopic | None) -> str:
-        prompt = f"{SECURITY_ASSISTANT_SYSTEM_PROMPT}\n\nDatos actuales del usuario:\n{self._context_builder.build(owner_id)}"
-        topic_context = _TOPIC_CONTEXTS.get(topic) if topic else None
-        return f"{prompt}\n\n{topic_context}" if topic_context else prompt
+    prompt = f"{SECURITY_ASSISTANT_SYSTEM_PROMPT}\n\nDatos actuales del usuario:\n{user_context}"
+    return f"{prompt}\n\n{topic_context}" if topic_context else prompt

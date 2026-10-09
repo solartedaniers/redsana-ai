@@ -1,4 +1,6 @@
-from app.domain.assistant_reply import mentions_unexpected_dns, to_plain_text
+from redsana_ai.assistant.reply_guard import mentions_unexpected_dns, to_plain_text
+
+FAMILY_DNS = ("1.1.1.3", "1.0.0.3")
 
 
 def test_markdown_markers_are_removed_but_the_text_stays() -> None:
@@ -8,15 +10,15 @@ def test_markdown_markers_are_removed_but_the_text_stays() -> None:
 
 
 def test_the_real_wrong_dns_the_model_wrote_is_flagged() -> None:
-    assert mentions_unexpected_dns("DNS primario: 1.1.1.3\nDNS secundario: 0.0.0.3")
+    assert mentions_unexpected_dns("DNS primario: 1.1.1.3\nDNS secundario: 0.0.0.3", FAMILY_DNS)
 
 
 def test_correct_family_dns_and_router_addresses_are_not_flagged() -> None:
     reply = "Entra a http://192.168.0.1 o 192.168.1.1 y escribe 1.1.1.3 y 1.0.0.3."
 
-    assert not mentions_unexpected_dns(reply)
+    assert not mentions_unexpected_dns(reply, FAMILY_DNS)
 
 
 def test_any_other_public_dns_is_flagged() -> None:
-    assert mentions_unexpected_dns("Usa 8.8.8.8 como secundario.")
-    assert mentions_unexpected_dns("Escribe 1.0.0.1 en el secundario.")
+    assert mentions_unexpected_dns("Usa 8.8.8.8 como secundario.", FAMILY_DNS)
+    assert mentions_unexpected_dns("Escribe 1.0.0.1 en el secundario.", FAMILY_DNS)

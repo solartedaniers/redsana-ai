@@ -1,11 +1,14 @@
 """Compara el paquete con la salida que daba el backend antes de extraer la IA (fixtures/legacy_outputs.json, generado
- con el commit 56affa6 del monorepo): prompt, turnos, limpieza y validación de DNS deben coincidir carácter a carácter."""
+ con el commit 56affa6 del monorepo): prompt, turnos, limpieza, validación de DNS y
+ detectores deben coincidir carácter a carácter."""
 import json
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
 
 from redsana_ai import ChatEngine, ChatTurn, EngineSecurityBriefing, EngineSecurityChat, family_mode_topic_context
+from redsana_ai import IsolationForestAnomalyDetector, StreakOutageDetector, classify_deviation
 from redsana_ai import mentions_unexpected_dns, to_plain_text
 
 LEGACY = json.loads((Path(__file__).parent / "fixtures" / "legacy_outputs.json").read_text(encoding="utf-8"))
@@ -61,3 +64,32 @@ def test_plain_text_cleanup_is_unchanged(case: dict) -> None:
 @pytest.mark.parametrize("case", LEGACY["unexpected_dns"])
 def test_unexpected_dns_check_is_unchanged(case: dict) -> None:
     assert mentions_unexpected_dns(case["input"], FAMILY_DNS) is case["output"]
+
+
+@pytest.mark.parametrize("case", LEGACY["anomaly"])
+def test_anomaly_detection_and_classification_are_unchanged(case: dict) -> None:
+    history = [tuple(sample) for sample in LEGACY["anomaly_history"]]
+    latest = tuple(case["latest"])
+
+    result = IsolationForestAnomalyDetector().evaluate(history, latest)
+
+    assert (result is not None) is case["is_anomalous"]
+    classification = classify_deviation(history, latest)
+    assert classification.deviating_metric == case["deviating_metric"]
+    assert classification.severity == case["severity"]
+    assert {"current": classification.current, "typical": classification.typical} == case["message_params"]
+
+
+@pytest.mark.parametrize("case", LEGACY["outage"])
+def test_outage_detection_is_unchanged(case: dict) -> None:
+    now = datetime.fromisoformat(LEGACY["outage_now"])
+    window = [(now - timedelta(minutes=minutes_ago), loss) for minutes_ago, loss in case["window"]]
+
+    episode = StreakOutageDetector().detect(window)
+
+    assert (None if episode is None else {
+        "started_at": episode.started_at.isoformat(),
+        "recovered_at": episode.recovered_at.isoformat(),
+        "duration_minutes": episode.duration_minutes,
+        "severity": episode.severity,
+    }) == case["episode"]

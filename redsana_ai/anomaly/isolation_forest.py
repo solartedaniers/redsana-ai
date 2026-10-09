@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from statistics import mean, pstdev
 from typing import Literal
@@ -6,61 +7,71 @@ import numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 
-from app.domain.alert_messages import alert_message_key
-from app.domain.measurement_source import MeasurementSource
-
 NetworkMetricVector = tuple[float, float, float]  # (latency_ms, jitter_ms, packet_loss_percent)
 DeviatingMetric = Literal["latency", "jitter", "packet_loss"]
+DeviationSeverity = Literal["warning", "critical"]
 
 # A una medición por minuto, 1440 muestras son ~24 h: así el entrenamiento cubre un ciclo día/noche completo.
 ANOMALY_WINDOW_SIZE = 1440
-
-# Historial mínimo antes de evaluar. La web casi nunca junta 24 h seguidas, así que empieza con 12 h
-# aunque sea menos precisa hasta completar el día.
-MIN_SAMPLES_TO_CALIBRATE_BY_SOURCE: dict[MeasurementSource, int] = {
-    "native": ANOMALY_WINDOW_SIZE,
-    "web": ANOMALY_WINDOW_SIZE // 2,
-}
 
 # Desviaciones estándar a partir de las cuales una anomalía ya confirmada se considera grave y no leve.
 SEVERITY_CRITICAL_Z_SCORE = 3.0
 
 # Con contamination='auto' el umbral era inestable en ventanas de poca varianza; 0.1 es el valor clásico y estable.
 ISOLATION_FOREST_CONTAMINATION = 0.1
+ISOLATION_FOREST_RANDOM_STATE = 42
 
 
 @dataclass(frozen=True)
 class DeviationClassification:
     deviating_metric: DeviatingMetric
-    severity: Literal["warning", "critical"]
-    message_key: str
-    message_params: dict[str, float]
+    severity: DeviationSeverity
+    current: float
+    typical: float
 
 
-_MESSAGE_KEYS: dict[DeviatingMetric, str] = {
-    "latency": alert_message_key("latencyDegraded"),
-    "jitter": alert_message_key("connectionUnstable"),
-    "packet_loss": alert_message_key("packetsBeingLost"),
-}
+class AnomalyDetector(ABC):
+    """Interfaz del detector: dice si la última muestra es anómala frente a su historial y, si lo es, qué fue."""
+
+    @abstractmethod
+    def evaluate(self, history: list[NetworkMetricVector], latest: NetworkMetricVector) -> DeviationClassification | None:
+        """None si latest es normal; history nunca incluye a latest."""
 
 
-class NetworkAnomalyDetector:
-    """Única clase que conoce IsolationForest y StandardScaler; creo una por evaluación porque fit muta su estado."""
+class IsolationForestAnomalyDetector(AnomalyDetector):
+    """Única clase que conoce IsolationForest y StandardScaler; los crea en cada evaluación porque fit muta su estado."""
 
-    def __init__(self) -> None:
-        self._scaler = StandardScaler()
-        self._model = IsolationForest(contamination=ISOLATION_FOREST_CONTAMINATION, random_state=42)
+    def __init__(
+        self,
+        contamination: float = ISOLATION_FOREST_CONTAMINATION,
+        random_state: int = ISOLATION_FOREST_RANDOM_STATE,
+        critical_z_score: float = SEVERITY_CRITICAL_Z_SCORE,
+    ) -> None:
+        self._contamination = contamination
+        self._random_state = random_state
+        self._critical_z_score = critical_z_score
+
+    def evaluate(self, history: list[NetworkMetricVector], latest: NetworkMetricVector) -> DeviationClassification | None:
+        if not self.is_anomalous(history, latest):
+            return None
+        return classify_deviation(history, latest, self._critical_z_score)
 
     def is_anomalous(self, history: list[NetworkMetricVector], latest: NetworkMetricVector) -> bool:
         """Entrena solo con history (la muestra nueva nunca entra a su propio baseline) y evalúa latest."""
-        scaled_history = self._scaler.fit_transform(np.array(history))
-        self._model.fit(scaled_history)
-        scaled_latest = self._scaler.transform([latest])
-        prediction = self._model.predict(scaled_latest)
+        scaler = StandardScaler()
+        model = IsolationForest(contamination=self._contamination, random_state=self._random_state)
+        scaled_history = scaler.fit_transform(np.array(history))
+        model.fit(scaled_history)
+        scaled_latest = scaler.transform([latest])
+        prediction = model.predict(scaled_latest)
         return bool(prediction[0] == -1)
 
 
-def classify_deviation(history: list[NetworkMetricVector], latest: NetworkMetricVector) -> DeviationClassification:
+def classify_deviation(
+    history: list[NetworkMetricVector],
+    latest: NetworkMetricVector,
+    critical_z_score: float = SEVERITY_CRITICAL_Z_SCORE,
+) -> DeviationClassification:
     """Decide qué métrica se desvió más y qué tan grave es con el z-score de cada una.
      El modelo decide SI hay anomalía; esto decide QUÉ fue y qué tan grave."""
     metrics: tuple[DeviatingMetric, ...] = ("latency", "jitter", "packet_loss")
@@ -75,17 +86,12 @@ def classify_deviation(history: list[NetworkMetricVector], latest: NetworkMetric
         typical_values[metric] = average
 
     deviating_metric = max(metrics, key=lambda metric: z_scores[metric])
-    severity: Literal["warning", "critical"] = (
-        "critical" if z_scores[deviating_metric] >= SEVERITY_CRITICAL_Z_SCORE else "warning"
-    )
+    severity: DeviationSeverity = "critical" if z_scores[deviating_metric] >= critical_z_score else "warning"
     metric_index = metrics.index(deviating_metric)
 
     return DeviationClassification(
         deviating_metric=deviating_metric,
         severity=severity,
-        message_key=_MESSAGE_KEYS[deviating_metric],
-        message_params={
-            "current": round(latest[metric_index], 1),
-            "typical": round(typical_values[deviating_metric], 1),
-        },
+        current=round(latest[metric_index], 1),
+        typical=round(typical_values[deviating_metric], 1),
     )

@@ -4,7 +4,13 @@ Paquete Python con la inteligencia artificial de RedSana: el asistente de seguri
 
 Es una librería: no lee variables de entorno ni conoce la base de datos. Todo lo que necesita (claves, modelo, tiempos de espera, parámetros y los datos reales del usuario) entra por constructor o por parámetro. El backend lo instala por URL de git, fijado a un tag, y lo arma en un único lugar de composición.
 
-> Repositorios del proyecto: frontend · backend · IA (enlaces pendientes de publicar).
+## 🔗 Repositorios del proyecto
+
+| Repositorio | Qué contiene |
+|---|---|
+| [redsana-frontend](https://github.com/solartedaniers/redsana-frontend) | App Angular + Tauri (web en Vercel, instalador en Releases) |
+| [redsana-backend](https://github.com/solartedaniers/redsana-backend) | API FastAPI desplegada en Render; instala `redsana-ai` por tag |
+| [redsana-ai](https://github.com/solartedaniers/redsana-ai) (este) | Paquete Python con el asistente y los detectores |
 
 ## Interfaz pública
 

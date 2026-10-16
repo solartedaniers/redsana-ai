@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from redsana_ai_service.composition import build_anomaly_detector
 from redsana_ai_service.config import ServiceSettings, get_settings
+from redsana_ai_service.errors import register_error_handlers
 from redsana_ai_service.readiness import ServiceReadiness
 from redsana_ai_service.routers import health
 
@@ -27,6 +28,7 @@ def create_app(settings: ServiceSettings | None = None, readiness: ServiceReadin
         openapi_url="/openapi.json" if docs_enabled else None,
     )
     app.state.readiness = readiness
+    register_error_handlers(app)
     app.include_router(health.router)
     return app
 

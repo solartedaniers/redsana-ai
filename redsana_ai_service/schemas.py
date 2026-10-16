@@ -1,7 +1,7 @@
 from typing import Literal
 
 from pydantic import BaseModel, Field
-from redsana_ai import ChatRole
+from redsana_ai import BriefingLanguage, ChatRole
 
 
 class HealthRead(BaseModel):
@@ -32,3 +32,14 @@ class ChatRequest(BaseModel):
 
 class ChatReply(BaseModel):
     reply: str
+
+
+class BriefingRequest(BaseModel):
+    """user_context ya trae la evaluación más reciente; guardar el resumen es trabajo del backend."""
+
+    user_context: str
+    language: BriefingLanguage
+
+
+class BriefingReply(BaseModel):
+    text: str

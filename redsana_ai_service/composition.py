@@ -3,9 +3,11 @@ from fastapi import Depends
 from redsana_ai import (
     AnomalyDetector,
     ChatEngine,
+    EngineSecurityBriefing,
     EngineSecurityChat,
     GroqClient,
     IsolationForestAnomalyDetector,
+    SecurityBriefing,
     SecurityChat,
 )
 
@@ -26,6 +28,10 @@ def get_chat_engine(settings: ServiceSettings = Depends(get_service_settings)) -
 
 def build_security_chat(engine: ChatEngine) -> SecurityChat:
     return EngineSecurityChat(engine)
+
+
+def build_security_briefing(engine: ChatEngine) -> SecurityBriefing:
+    return EngineSecurityBriefing(engine)
 
 
 def build_anomaly_detector() -> AnomalyDetector:

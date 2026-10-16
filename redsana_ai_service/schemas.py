@@ -1,7 +1,7 @@
 from typing import Literal
 
 from pydantic import BaseModel, Field
-from redsana_ai import BriefingLanguage, ChatRole
+from redsana_ai import BriefingLanguage, ChatRole, DeviatingMetric, NetworkMetricVector
 
 
 class HealthRead(BaseModel):
@@ -43,3 +43,22 @@ class BriefingRequest(BaseModel):
 
 class BriefingReply(BaseModel):
     text: str
+
+
+class AnomalyRequest(BaseModel):
+    """Cada vector es (latency_ms, jitter_ms, packet_loss_percent); history nunca incluye a latest."""
+
+    history: list[NetworkMetricVector] = Field(min_length=1)
+    latest: NetworkMetricVector
+
+
+class DeviationRead(BaseModel):
+    deviating_metric: DeviatingMetric
+    severity: Literal["warning", "critical"]
+    current: float
+    typical: float
+
+
+class AnomalyReply(BaseModel):
+    # None cuando latest es normal, igual que AnomalyDetector.evaluate.
+    classification: DeviationRead | None

@@ -4,13 +4,15 @@ Paquete Python con la inteligencia artificial de RedSana: el asistente de seguri
 
 Es una librería: no lee variables de entorno ni conoce la base de datos. Todo lo que necesita (claves, modelo, tiempos de espera, parámetros y los datos reales del usuario) entra por constructor o por parámetro. El backend lo instala por URL de git, fijado a un tag, y lo arma en un único lugar de composición.
 
+Además, este repo trae un **servicio HTTP** aparte (`redsana_ai_service`, FastAPI) que expone las mismas capacidades para desplegar la IA como servicio propio en Render. La librería no importa FastAPI ni sabe que el servicio existe; el backend elige entre usar la librería en su proceso (`AI_MODE=local`) o llamar al servicio (`AI_MODE=remote`).
+
 ## 🔗 Repositorios del proyecto
 
 | Repositorio | Qué contiene |
 |---|---|
 | [redsana-frontend](https://github.com/solartedaniers/redsana-frontend) | App Angular + Tauri (web en Vercel, instalador en Releases) |
 | [redsana-backend](https://github.com/solartedaniers/redsana-backend) | API FastAPI desplegada en Render; instala `redsana-ai` por tag |
-| [redsana-ai](https://github.com/solartedaniers/redsana-ai) (este) | Paquete Python con el asistente y los detectores |
+| [redsana-ai](https://github.com/solartedaniers/redsana-ai) (este) | Paquete Python con el asistente y los detectores, y su servicio HTTP |
 
 ## Interfaz pública
 
@@ -67,12 +69,44 @@ reply = EngineSecurityChat(engine).ask(
 python -m venv venv
 venv\Scripts\activate          # Windows
 source venv/bin/activate       # macOS/Linux
-pip install -e ".[test]"
+pip install -e ".[service,test]"
 pytest
 ```
 
-`tests/test_legacy_parity.py` compara el paquete con la salida que daba el backend antes de extraer la IA (`tests/fixtures/legacy_outputs.json`): el prompt, el briefing, la limpieza de Markdown, la validación de DNS y los detectores deben coincidir carácter a carácter.
+`tests/test_legacy_parity.py` compara el paquete con la salida que daba el backend antes de extraer la IA (`tests/fixtures/legacy_outputs.json`): el prompt, el briefing, la limpieza de Markdown, la validación de DNS y los detectores deben coincidir carácter a carácter. `tests/test_service_contract.py` pasa esas mismas fixtures por HTTP y exige que el servicio devuelva exactamente lo mismo que el paquete.
 
 ## Versiones
 
 La versión está en `pyproject.toml` y cada versión publicada lleva un tag `vX.Y.Z`. El backend fija el tag en su `requirements.txt`; para publicar un cambio, sube la versión, crea el tag y actualiza el tag en el backend.
+
+El servicio HTTP no forma parte del paquete instalable (`packages.find` solo incluye `redsana_ai`), así que agregarlo o cambiarlo no exige un tag nuevo: el backend en modo local sigue instalando la librería por su tag.
+
+## Servicio HTTP (`redsana_ai_service`)
+
+| Método y ruta | Clave | Qué hace |
+|---|---|---|
+| `GET /health` | No | `{"status": "ok", "ready": true/false}`. `ready` pasa a `true` cuando termina el calentamiento del detector tras arrancar. Es el health check de Render y lo que consulta el backend. |
+| `POST /v1/chat` | Sí | `SecurityChat.ask`: `{user_context, history, user_message, topic_context}` → `{reply}`. |
+| `POST /v1/briefing` | Sí | `SecurityBriefing.write`: `{user_context, language}` → `{text}`. |
+| `POST /v1/anomaly/evaluate` | Sí | `AnomalyDetector.evaluate`: `{history, latest}` (vectores `[latency_ms, jitter_ms, packet_loss_percent]`) → `{classification}` o `null`. |
+| `POST /v1/outage/detect` | Sí | `OutageDetector.detect`: `{window: [{recorded_at, packet_loss_percent}]}` (de más nueva a más vieja) → `{episode}` o `null`. |
+
+**Autenticación:** encabezado `X-AI-Service-Key` con el valor de `AI_SERVICE_API_KEY`. Sin clave configurada el servicio rechaza toda ruta protegida (503) en vez de quedar abierto.
+
+**Errores:** siempre `{"code", "message"}`, con `code` estable: `invalid_api_key` (401), `validation_error` (422), `chat_engine_unavailable` (502; el detalle de Groq queda solo en el log), `service_misconfigured` (503), `http_error` e `internal_error` (500).
+
+**Variables de entorno** (ver `.env.example`): `AI_SERVICE_API_KEY`, `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_API_URL`, `GROQ_TIMEOUT_SECONDS`, `GROQ_TEMPERATURE` y `ENABLE_API_DOCS` (documentación en `/docs`, apagada por defecto). Los parámetros de los detectores son los del paquete, para que el servicio dé lo mismo que el modo local del backend.
+
+### Correrlo en local
+
+```bash
+pip install -e ".[service]"
+copy .env.example .env          # Windows (cp en macOS/Linux); completa las claves
+uvicorn redsana_ai_service.main:app --reload --port 8001
+```
+
+### Despliegue en Render
+
+`render.yaml` describe el servicio: build `pip install -r requirements.txt` (instala este repo con el extra `service`), inicio `uvicorn redsana_ai_service.main:app --host 0.0.0.0 --port $PORT --forwarded-allow-ips="*"` y health check `/health`. La versión de Python sale de `.python-version`, la misma del backend. `AI_SERVICE_API_KEY` y `GROQ_API_KEY` se cargan en el panel de Render (`sync: false`).
+
+En el plan gratuito Render apaga el servicio tras un rato sin peticiones y tarda cerca de un minuto en volver (incluye importar scikit-learn). Por eso el backend expone el estado de la IA (lista, encendiendo o no disponible) y la despierta al iniciar sesión, en vez de devolverle un error al usuario.

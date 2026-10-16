@@ -7,8 +7,10 @@ from redsana_ai import (
     EngineSecurityChat,
     GroqClient,
     IsolationForestAnomalyDetector,
+    OutageDetector,
     SecurityBriefing,
     SecurityChat,
+    StreakOutageDetector,
 )
 
 from redsana_ai_service.config import ServiceSettings
@@ -37,3 +39,7 @@ def build_security_briefing(engine: ChatEngine) -> SecurityBriefing:
 def build_anomaly_detector() -> AnomalyDetector:
     # Parámetros por defecto del paquete: así el servicio da lo mismo que el modo local del backend.
     return IsolationForestAnomalyDetector()
+
+
+def build_outage_detector() -> OutageDetector:
+    return StreakOutageDetector()

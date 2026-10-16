@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -62,3 +63,25 @@ class DeviationRead(BaseModel):
 class AnomalyReply(BaseModel):
     # None cuando latest es normal, igual que AnomalyDetector.evaluate.
     classification: DeviationRead | None
+
+
+class OutageSamplePayload(BaseModel):
+    recorded_at: datetime
+    packet_loss_percent: float
+
+
+class OutageRequest(BaseModel):
+    # De más nueva a más vieja, como OutageDetector.detect.
+    window: list[OutageSamplePayload]
+
+
+class OutageEpisodeRead(BaseModel):
+    started_at: datetime
+    recovered_at: datetime
+    duration_minutes: int
+    severity: Literal["warning", "critical"]
+
+
+class OutageReply(BaseModel):
+    # None cuando no hay una recuperación que reportar, igual que OutageDetector.detect.
+    episode: OutageEpisodeRead | None

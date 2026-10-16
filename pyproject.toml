@@ -14,4 +14,5 @@ dependencies = ["scikit-learn==1.7.2"]
 test = ["pytest==9.1.1"]
 
 [tool.setuptools.packages.find]
-include = ["redsana_ai*"]
+# Sin el comodín amplio, el servicio HTTP (redsana_ai_service) no viaja dentro de la librería que instala el backend.
+include = ["redsana_ai", "redsana_ai.*"]

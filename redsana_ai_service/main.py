@@ -27,6 +27,7 @@ def create_app(settings: ServiceSettings | None = None, readiness: ServiceReadin
         redoc_url=None,
         openapi_url="/openapi.json" if docs_enabled else None,
     )
+    app.state.settings = settings
     app.state.readiness = readiness
     register_error_handlers(app)
     app.include_router(health.router)

@@ -1,13 +1,10 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 
+from redsana_ai_service.dependencies import get_readiness
 from redsana_ai_service.readiness import ServiceReadiness
 from redsana_ai_service.schemas import HealthRead
 
 router = APIRouter(tags=["health"])
-
-
-def get_readiness(request: Request) -> ServiceReadiness:
-    return request.app.state.readiness
 
 
 # Sin clave a propósito: lo consultan el health check de Render y el backend para saber si ya despertó.

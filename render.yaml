@@ -1,0 +1,19 @@
+# Blueprint de Render para el servicio de IA. Los secretos van con sync: false para
+# que se carguen en el dashboard y nunca queden en el repositorio.
+# Solo aplica si el servicio se creó como Blueprint; si se creó desde el panel,
+# estos mismos valores se configuran allí a mano.
+# La versión de Python sale de .python-version, la misma que usa el backend.
+services:
+  - type: web
+    name: redsana-ai
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # Igual que el backend: Render termina el HTTPS en su proxy.
+    startCommand: uvicorn redsana_ai_service.main:app --host 0.0.0.0 --port $PORT --forwarded-allow-ips="*"
+    healthCheckPath: /health
+    envVars:
+      - key: AI_SERVICE_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false

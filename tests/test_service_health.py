@@ -65,3 +65,12 @@ def test_api_docs_are_off_unless_enabled() -> None:
 
     assert closed.get("/openapi.json").status_code == 404
     assert opened.get("/openapi.json").status_code == 200
+
+
+def test_health_also_answers_head_without_a_body() -> None:
+    client = TestClient(create_app(ServiceSettings(_env_file=None), ServiceReadiness(_CountingDetector())))
+
+    response = client.head("/health")
+
+    assert response.status_code == 200
+    assert response.content == b""

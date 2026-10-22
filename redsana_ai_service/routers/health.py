@@ -8,6 +8,8 @@ router = APIRouter(tags=["health"])
 
 
 # Sin clave a propósito: lo consultan el health check de Render y el backend para saber si ya despertó.
+# HEAD también, porque algunos monitores y proxies lo usan y recibían 405.
+@router.head("/health", include_in_schema=False)
 @router.get("/health", response_model=HealthRead)
 def health(readiness: ServiceReadiness = Depends(get_readiness)) -> HealthRead:
     return HealthRead(ready=readiness.is_ready)

@@ -85,7 +85,7 @@ El servicio HTTP no forma parte del paquete instalable (`packages.find` solo inc
 
 | Método y ruta | Clave | Qué hace |
 |---|---|---|
-| `GET /health` | No | `{"status": "ok", "ready": true/false}`. `ready` pasa a `true` cuando termina el calentamiento del detector tras arrancar. Es el health check de Render y lo que consulta el backend. |
+| `GET /health` | No | `{"status": "ok", "ready": true/false}`. `ready` pasa a `true` cuando termina el calentamiento del detector tras arrancar. Es el health check de Render, lo que consulta el backend y lo que pide el frontend para despertar el servicio (GET silencioso `no-cors`, ver abajo). |
 | `POST /v1/chat` | Sí | `SecurityChat.ask`: `{user_context, history, user_message, topic_context}` → `{reply}`. |
 | `POST /v1/briefing` | Sí | `SecurityBriefing.write`: `{user_context, language}` → `{text}`. |
 | `POST /v1/anomaly/evaluate` | Sí | `AnomalyDetector.evaluate`: `{history, latest}` (vectores `[latency_ms, jitter_ms, packet_loss_percent]`) → `{classification}` o `null`. |
@@ -109,4 +109,4 @@ uvicorn redsana_ai_service.main:app --reload --port 8001
 
 `render.yaml` describe el servicio: build `pip install -r requirements.txt` (instala este repo con el extra `service`), inicio `uvicorn redsana_ai_service.main:app --host 0.0.0.0 --port $PORT --forwarded-allow-ips="*"` y health check `/health`. La versión de Python sale de `.python-version`, la misma del backend. `AI_SERVICE_API_KEY` y `GROQ_API_KEY` se cargan en el panel de Render (`sync: false`).
 
-En el plan gratuito Render apaga el servicio tras un rato sin peticiones y tarda cerca de un minuto en volver (incluye importar scikit-learn). Por eso el backend expone el estado de la IA (lista, encendiendo o no disponible) y la despierta al iniciar sesión, en vez de devolverle un error al usuario.
+En el plan gratuito Render apaga el servicio tras un rato sin peticiones y tarda cerca de un minuto en volver (incluye importar scikit-learn). Por eso el backend expone el estado de la IA (lista, encendiendo o no disponible) y la despierta al iniciar sesión, en vez de devolverle un error al usuario. Además, el frontend hace un GET silencioso a `/health` (variable `AI_SERVICE_PUBLIC_URL` del frontend) cada vez que el usuario inicia o restaura la sesión, abre el chat o pulsa Reintentar, porque una petición desde el navegador lo despierta aunque la del backend no lo logre. Nunca se dispara en segundo plano.

@@ -1,4 +1,5 @@
 """Todo error sale con el mismo cuerpo tipado {code, message} y sin detalles internos."""
+
 from fastapi import APIRouter, FastAPI
 from fastapi.testclient import TestClient
 from pydantic import BaseModel

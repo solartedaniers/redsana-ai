@@ -1,4 +1,5 @@
 """POST /v1/outage/detect usa el mismo StreakOutageDetector que el paquete."""
+
 from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
@@ -14,7 +15,9 @@ def _window(*samples: tuple[int, float]) -> list[dict]:
 
 
 def test_a_recovery_after_a_total_outage_is_reported(service_client: TestClient) -> None:
-    response = service_client.post("/v1/outage/detect", json={"window": _window((0, 0.0), (1, 100.0), (2, 100.0), (3, 0.0))})
+    response = service_client.post(
+        "/v1/outage/detect", json={"window": _window((0, 0.0), (1, 100.0), (2, 100.0), (3, 0.0))}
+    )
 
     assert response.status_code == 200
     episode = response.json()["episode"]

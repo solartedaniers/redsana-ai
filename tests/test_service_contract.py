@@ -1,5 +1,6 @@
 """Contrato: por HTTP el servicio devuelve exactamente lo mismo que el paquete con las fixtures legacy
- (mismo prompt y turnos hacia el motor, mismo texto, mismas anomalías y mismos cortes)."""
+(mismo prompt y turnos hacia el motor, mismo texto, mismas anomalías y mismos cortes)."""
+
 from dataclasses import asdict
 from datetime import datetime, timedelta
 
@@ -50,7 +51,9 @@ def test_anomaly_over_http_matches_the_package(case: dict, service_client: TestC
     latest = tuple(case["latest"])
     expected = IsolationForestAnomalyDetector().evaluate(history, latest)
 
-    response = service_client.post("/v1/anomaly/evaluate", json={"history": LEGACY["anomaly_history"], "latest": case["latest"]})
+    response = service_client.post(
+        "/v1/anomaly/evaluate", json={"history": LEGACY["anomaly_history"], "latest": case["latest"]}
+    )
 
     assert response.status_code == 200
     classification = response.json()["classification"]
@@ -75,16 +78,24 @@ def test_outage_over_http_matches_the_package(case: dict, service_client: TestCl
 
     assert response.status_code == 200
     episode = response.json()["episode"]
-    parsed = None if episode is None else {
-        "started_at": datetime.fromisoformat(episode["started_at"]).isoformat(),
-        "recovered_at": datetime.fromisoformat(episode["recovered_at"]).isoformat(),
-        "duration_minutes": episode["duration_minutes"],
-        "severity": episode["severity"],
-    }
+    parsed = (
+        None
+        if episode is None
+        else {
+            "started_at": datetime.fromisoformat(episode["started_at"]).isoformat(),
+            "recovered_at": datetime.fromisoformat(episode["recovered_at"]).isoformat(),
+            "duration_minutes": episode["duration_minutes"],
+            "severity": episode["severity"],
+        }
+    )
     assert parsed == case["episode"]
-    assert parsed == (None if expected is None else {
-        "started_at": expected.started_at.isoformat(),
-        "recovered_at": expected.recovered_at.isoformat(),
-        "duration_minutes": expected.duration_minutes,
-        "severity": expected.severity,
-    })
+    assert parsed == (
+        None
+        if expected is None
+        else {
+            "started_at": expected.started_at.isoformat(),
+            "recovered_at": expected.recovered_at.isoformat(),
+            "duration_minutes": expected.duration_minutes,
+            "severity": expected.severity,
+        }
+    )

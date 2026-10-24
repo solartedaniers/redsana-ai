@@ -1,4 +1,5 @@
 """Dependencias de FastAPI que leen lo que create_app dejó en app.state (así cada app de prueba trae lo suyo)."""
+
 from fastapi import Request
 
 from redsana_ai_service.config import ServiceSettings

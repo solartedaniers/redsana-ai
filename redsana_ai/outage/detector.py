@@ -36,7 +36,7 @@ class OutageDetector(ABC):
 
 class StreakOutageDetector(OutageDetector):
     """Detecta una recuperación justo después de una racha de caídas totales continuas; si el hueco es demasiado
-     grande no lo reporto, porque la app pudo estar cerrada."""
+    grande no lo reporto, porque la app pudo estar cerrada."""
 
     def __init__(
         self,

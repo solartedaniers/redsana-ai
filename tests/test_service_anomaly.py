@@ -1,4 +1,5 @@
 """POST /v1/anomaly/evaluate usa el mismo IsolationForestAnomalyDetector que el paquete."""
+
 import json
 from pathlib import Path
 

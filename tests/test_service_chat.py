@@ -1,4 +1,5 @@
 """POST /v1/chat responde con EngineSecurityChat; el motor se reemplaza para no llamar a Groq."""
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from redsana_ai import ChatEngine, ChatTurn, GroqClientError

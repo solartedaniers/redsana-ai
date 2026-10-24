@@ -34,7 +34,9 @@ class AnomalyDetector(ABC):
     """Interfaz del detector: dice si la última muestra es anómala frente a su historial y, si lo es, qué fue."""
 
     @abstractmethod
-    def evaluate(self, history: list[NetworkMetricVector], latest: NetworkMetricVector) -> DeviationClassification | None:
+    def evaluate(
+        self, history: list[NetworkMetricVector], latest: NetworkMetricVector
+    ) -> DeviationClassification | None:
         """None si latest es normal; history nunca incluye a latest."""
 
 
@@ -51,7 +53,9 @@ class IsolationForestAnomalyDetector(AnomalyDetector):
         self._random_state = random_state
         self._critical_z_score = critical_z_score
 
-    def evaluate(self, history: list[NetworkMetricVector], latest: NetworkMetricVector) -> DeviationClassification | None:
+    def evaluate(
+        self, history: list[NetworkMetricVector], latest: NetworkMetricVector
+    ) -> DeviationClassification | None:
         if not self.is_anomalous(history, latest):
             return None
         return classify_deviation(history, latest, self._critical_z_score)
@@ -73,7 +77,7 @@ def classify_deviation(
     critical_z_score: float = SEVERITY_CRITICAL_Z_SCORE,
 ) -> DeviationClassification:
     """Decide qué métrica se desvió más y qué tan grave es con el z-score de cada una.
-     El modelo decide SI hay anomalía; esto decide QUÉ fue y qué tan grave."""
+    El modelo decide SI hay anomalía; esto decide QUÉ fue y qué tan grave."""
     metrics: tuple[DeviatingMetric, ...] = ("latency", "jitter", "packet_loss")
     z_scores: dict[DeviatingMetric, float] = {}
     typical_values: dict[DeviatingMetric, float] = {}

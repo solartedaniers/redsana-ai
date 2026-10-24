@@ -1,4 +1,5 @@
 """Único lugar donde el servicio construye las piezas de redsana_ai; cambiar una implementación es tocar solo aquí."""
+
 from fastapi import Depends
 from redsana_ai import (
     AnomalyDetector,

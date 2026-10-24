@@ -1,4 +1,5 @@
 """POST /v1/briefing redacta el primer mensaje tras una evaluación con EngineSecurityBriefing."""
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from redsana_ai import ChatEngine, ChatTurn, GroqClientError

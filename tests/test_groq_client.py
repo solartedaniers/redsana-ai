@@ -1,4 +1,5 @@
 """Sin red: urlopen falso para comprobar que todo lo que usa el cliente entra por el constructor."""
+
 import io
 import json
 import urllib.error
@@ -19,8 +20,12 @@ class _Response(io.BytesIO):
 
 def _client() -> GroqClient:
     return GroqClient(
-        api_key="test-key", model="test-model", timeout_seconds=7, temperature=0.3,
-        api_url="https://llm.example/v1/chat", user_agent="test-agent",
+        api_key="test-key",
+        model="test-model",
+        timeout_seconds=7,
+        temperature=0.3,
+        api_url="https://llm.example/v1/chat",
+        user_agent="test-agent",
     )
 
 

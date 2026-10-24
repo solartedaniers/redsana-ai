@@ -60,9 +60,7 @@ async def _http_error(_: Request, error: StarletteHTTPException) -> JSONResponse
 
 async def _unexpected_error(_: Request, error: Exception) -> JSONResponse:
     logger.exception("unexpected AI service error", exc_info=error)
-    return _error_response(
-        status.HTTP_500_INTERNAL_SERVER_ERROR, ServiceErrorCode.INTERNAL_ERROR, "internal error"
-    )
+    return _error_response(status.HTTP_500_INTERNAL_SERVER_ERROR, ServiceErrorCode.INTERNAL_ERROR, "internal error")
 
 
 def register_error_handlers(app: FastAPI) -> None:

@@ -1,4 +1,5 @@
 """La configuración del servicio sale del entorno y, sin clave, queda cerrada."""
+
 import pytest
 
 from redsana_ai_service.config import ServiceSettings

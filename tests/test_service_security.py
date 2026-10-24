@@ -1,4 +1,5 @@
 """Las rutas protegidas exigen la clave compartida; sin clave configurada el servicio queda cerrado."""
+
 from fastapi import APIRouter, Depends
 from fastapi.testclient import TestClient
 
@@ -10,7 +11,9 @@ from redsana_ai_service.security import API_KEY_HEADER, require_api_key
 
 
 def _client(api_key: str) -> TestClient:
-    app = create_app(ServiceSettings(_env_file=None, ai_service_api_key=api_key), ServiceReadiness(build_anomaly_detector()))
+    app = create_app(
+        ServiceSettings(_env_file=None, ai_service_api_key=api_key), ServiceReadiness(build_anomaly_detector())
+    )
     protected = APIRouter(dependencies=[Depends(require_api_key)])
 
     @protected.get("/protected")

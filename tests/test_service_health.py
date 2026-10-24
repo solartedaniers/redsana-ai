@@ -1,4 +1,5 @@
 """/health responde siempre, sin clave, y dice si el servicio ya terminó de calentar."""
+
 from fastapi.testclient import TestClient
 from redsana_ai import AnomalyDetector, DeviationClassification, NetworkMetricVector
 
@@ -12,7 +13,9 @@ class _CountingDetector(AnomalyDetector):
         self.calls = 0
         self._fails = fails
 
-    def evaluate(self, history: list[NetworkMetricVector], latest: NetworkMetricVector) -> DeviationClassification | None:
+    def evaluate(
+        self, history: list[NetworkMetricVector], latest: NetworkMetricVector
+    ) -> DeviationClassification | None:
         self.calls += 1
         if self._fails:
             raise RuntimeError("broken model")

@@ -1,4 +1,5 @@
 """Sin base: el detector con IsolationForest real y datos sintéticos, y la severidad por separado."""
+
 from redsana_ai import IsolationForestAnomalyDetector, NetworkMetricVector, classify_deviation
 
 # Red doméstica normal (~20 ms, ~2 ms de jitter, ~0 % de pérdida) con algo de ruido para que la desviación no sea cero.
@@ -18,7 +19,9 @@ def test_is_anomalous_returns_true_for_a_sample_far_outside_the_normal_range() -
     detector = IsolationForestAnomalyDetector()
 
     assert detector.is_anomalous(_NORMAL_HISTORY, (400.0, 2.0, 0.0)) is True
-    assert detector.evaluate(_NORMAL_HISTORY, (400.0, 2.0, 0.0)) == classify_deviation(_NORMAL_HISTORY, (400.0, 2.0, 0.0))
+    assert detector.evaluate(_NORMAL_HISTORY, (400.0, 2.0, 0.0)) == classify_deviation(
+        _NORMAL_HISTORY, (400.0, 2.0, 0.0)
+    )
 
 
 def test_classify_deviation_picks_the_metric_with_the_largest_z_score() -> None:

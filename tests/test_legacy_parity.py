@@ -1,5 +1,6 @@
 """Compara con la salida del backend antes de extraer la IA (fixtures/legacy_outputs.json, commit 56affa6 del
 monorepo): todo debe coincidir carácter a carácter."""
+
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -86,9 +87,13 @@ def test_outage_detection_is_unchanged(case: dict) -> None:
 
     episode = StreakOutageDetector().detect(window)
 
-    assert (None if episode is None else {
-        "started_at": episode.started_at.isoformat(),
-        "recovered_at": episode.recovered_at.isoformat(),
-        "duration_minutes": episode.duration_minutes,
-        "severity": episode.severity,
-    }) == case["episode"]
+    assert (
+        None
+        if episode is None
+        else {
+            "started_at": episode.started_at.isoformat(),
+            "recovered_at": episode.recovered_at.isoformat(),
+            "duration_minutes": episode.duration_minutes,
+            "severity": episode.severity,
+        }
+    ) == case["episode"]

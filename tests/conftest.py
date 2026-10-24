@@ -1,4 +1,5 @@
 """Fixtures del servicio HTTP: una app aislada, con su propia clave y sin llamar nunca a Groq."""
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient

@@ -17,7 +17,7 @@ def to_plain_text(reply: str) -> str:
 
 def mentions_unexpected_dns(reply: str, allowed_dns: Collection[str]) -> bool:
     """True si la respuesta nombra una IP que no es local ni de allowed_dns. Existe porque el modelo llegó
-     a escribir "0.0.0.3" en vez de "1.0.0.3", y un error así deja al usuario sin internet."""
+    a escribir "0.0.0.3" en vez de "1.0.0.3", y un error así deja al usuario sin internet."""
     for candidate in _IPV4.findall(reply):
         try:
             address = ipaddress.IPv4Address(candidate)

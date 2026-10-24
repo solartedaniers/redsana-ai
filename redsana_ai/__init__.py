@@ -1,4 +1,5 @@
 """Interfaz pública de RedSana AI: el backend solo usa lo que se exporta aquí."""
+
 from redsana_ai.anomaly.isolation_forest import (
     ANOMALY_WINDOW_SIZE,
     AnomalyDetector,

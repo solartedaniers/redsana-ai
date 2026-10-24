@@ -12,7 +12,9 @@ class SecurityChat(ABC):
     """Interfaz del chat del asistente: quien llama da los datos reales ya armados, nunca su base de datos."""
 
     @abstractmethod
-    def ask(self, user_context: str, history: list[ChatTurn], user_message: str, topic_context: str | None = None) -> str:
+    def ask(
+        self, user_context: str, history: list[ChatTurn], user_message: str, topic_context: str | None = None
+    ) -> str:
         """history: la conversación previa en orden; topic_context: instrucciones extra del tema, si hay."""
 
 
@@ -23,7 +25,9 @@ class EngineSecurityChat(SecurityChat):
         self._engine = engine
         self._history_limit = history_limit
 
-    def ask(self, user_context: str, history: list[ChatTurn], user_message: str, topic_context: str | None = None) -> str:
+    def ask(
+        self, user_context: str, history: list[ChatTurn], user_message: str, topic_context: str | None = None
+    ) -> str:
         system_prompt = build_system_prompt(user_context, topic_context)
-        turns = [*history[-self._history_limit:], ChatTurn("user", user_message)]
+        turns = [*history[-self._history_limit :], ChatTurn("user", user_message)]
         return to_plain_text(self._engine.complete(system_prompt, turns))

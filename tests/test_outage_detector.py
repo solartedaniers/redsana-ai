@@ -1,4 +1,5 @@
 """Sin base: detección de cortes por el contenido de las filas (no por huecos), con horas sintéticas."""
+
 from datetime import datetime, timedelta, timezone
 
 from redsana_ai import OutageSample, StreakOutageDetector

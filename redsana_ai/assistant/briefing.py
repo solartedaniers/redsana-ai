@@ -10,10 +10,12 @@ BriefingLanguage = Literal["es", "en"]
 _LANGUAGE_NAMES: dict[BriefingLanguage, str] = {"es": "espanol", "en": "ingles"}
 
 # Instrucción interna (el usuario no la ve y no se guarda) para el primer mensaje tras una evaluación.
+# Los pesos no van aquí: los manda el backend en los datos del usuario, desde su configuración.
 _BRIEFING_REQUEST = """\
 El usuario acaba de enviar su evaluacion de seguridad. Escribe TU el primer mensaje \
 de la conversacion, en {language}, en lenguaje sencillo y sin jerga:
-1. Su puntaje y el desglose (cuestionario 30% y analisis tecnico 70%).
+1. Su puntaje y el desglose (cuestionario y analisis tecnico, con el peso de cada \
+parte que dan los datos del usuario).
 2. De donde sale el analisis tecnico: si se midio desde la app de escritorio, dilo con \
 su fecha; si fue reutilizado de una medicion anterior, dilo con su fecha; si NO hay \
 analisis tecnico, explica con honestidad que el puntaje es solo del cuestionario y que \

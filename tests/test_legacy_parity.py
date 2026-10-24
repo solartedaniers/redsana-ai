@@ -1,6 +1,5 @@
-"""Compara el paquete con la salida que daba el backend antes de extraer la IA (fixtures/legacy_outputs.json, generado
- con el commit 56affa6 del monorepo): prompt, turnos, limpieza, validación de DNS y
- detectores deben coincidir carácter a carácter."""
+"""Compara con la salida del backend antes de extraer la IA (fixtures/legacy_outputs.json, commit 56affa6 del
+monorepo): todo debe coincidir carácter a carácter."""
 import json
 from datetime import datetime, timedelta
 from pathlib import Path

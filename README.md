@@ -48,7 +48,7 @@ Utilidades: `build_system_prompt`, `family_mode_topic_context`, `to_plain_text` 
 | | `max_gap_between_samples` | 5 min | Hueco máximo para afirmar un corte continuo. |
 | | `critical_duration_minutes` | `15` | Duración a partir de la cual es `critical`. |
 
-Constantes para quien consulta el historial: `ANOMALY_WINDOW_SIZE` (1440 mediciones ≈ 24 h), `OUTAGE_LOOKBACK_LIMIT` (120) y `CHAT_HISTORY_LIMIT` (12).
+Constantes para quien consulta el historial: `ANOMALY_WINDOW_SIZE` (1440 mediciones ≈ 24 h), `OUTAGE_LOOKBACK_LIMIT` (120) y `CHAT_HISTORY_LIMIT` (12). Son los valores por defecto: el backend y el servicio HTTP los pueden cambiar por variables de entorno (ver abajo y el README del backend).
 
 ## Uso
 
@@ -95,7 +95,7 @@ El servicio HTTP no forma parte del paquete instalable (`packages.find` solo inc
 
 **Errores:** siempre `{"code", "message"}`, con `code` estable: `invalid_api_key` (401), `validation_error` (422), `chat_engine_unavailable` (502; el detalle de Groq queda solo en el log), `service_misconfigured` (503), `http_error` e `internal_error` (500).
 
-**Variables de entorno** (ver `.env.example`): `AI_SERVICE_API_KEY`, `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_API_URL`, `GROQ_TIMEOUT_SECONDS`, `GROQ_TEMPERATURE` y `ENABLE_API_DOCS` (documentación en `/docs`, apagada por defecto). Los parámetros de los detectores son los del paquete, para que el servicio dé lo mismo que el modo local del backend.
+**Variables de entorno** (ver `.env.example`): `AI_SERVICE_API_KEY`, `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_API_URL`, `GROQ_TIMEOUT_SECONDS`, `GROQ_TEMPERATURE` y `ENABLE_API_DOCS` (documentación en `/docs`, apagada por defecto). Parámetros de los detectores (opcionales; por defecto los del paquete, tabla de arriba): `ANOMALY_CRITICAL_Z_SCORE`, `ANOMALY_CONTAMINATION`, `ANOMALY_RANDOM_STATE`, `OUTAGE_PACKET_LOSS_THRESHOLD_PERCENT`, `OUTAGE_MAX_GAP_MINUTES` y `OUTAGE_CRITICAL_DURATION_MINUTES`. Tienen los mismos nombres que en el backend: si cambias uno, ponlo igual en los dos para que el servicio dé lo mismo que el respaldo local del backend. Valores fuera de rango hacen fallar el arranque. La ventana y el lookback no van aquí: los decide el backend al mandar el historial.
 
 ### Correrlo en local
 

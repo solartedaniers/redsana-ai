@@ -1,5 +1,7 @@
 """Único lugar donde el servicio construye las piezas de redsana_ai; cambiar una implementación es tocar solo aquí."""
 
+from datetime import timedelta
+
 from fastapi import Depends
 from redsana_ai import (
     AnomalyDetector,
@@ -37,10 +39,18 @@ def build_security_briefing(engine: ChatEngine) -> SecurityBriefing:
     return EngineSecurityBriefing(engine)
 
 
-def build_anomaly_detector() -> AnomalyDetector:
-    # Parámetros por defecto del paquete: así el servicio da lo mismo que el modo local del backend.
-    return IsolationForestAnomalyDetector()
+def build_anomaly_detector(settings: ServiceSettings = Depends(get_service_settings)) -> AnomalyDetector:
+    # Con los valores por defecto da lo mismo que el modo local del backend.
+    return IsolationForestAnomalyDetector(
+        contamination=settings.anomaly_contamination,
+        random_state=settings.anomaly_random_state,
+        critical_z_score=settings.anomaly_critical_z_score,
+    )
 
 
-def build_outage_detector() -> OutageDetector:
-    return StreakOutageDetector()
+def build_outage_detector(settings: ServiceSettings = Depends(get_service_settings)) -> OutageDetector:
+    return StreakOutageDetector(
+        packet_loss_threshold_percent=settings.outage_packet_loss_threshold_percent,
+        max_gap_between_samples=timedelta(minutes=settings.outage_max_gap_minutes),
+        critical_duration_minutes=settings.outage_critical_duration_minutes,
+    )

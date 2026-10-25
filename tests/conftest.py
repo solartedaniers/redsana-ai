@@ -16,7 +16,7 @@ _TEST_SERVICE_KEY = "test-service-key"
 @pytest.fixture
 def service_app() -> FastAPI:
     settings = ServiceSettings(_env_file=None, ai_service_api_key=_TEST_SERVICE_KEY, groq_api_key="")
-    return create_app(settings, ServiceReadiness(build_anomaly_detector()))
+    return create_app(settings, ServiceReadiness(build_anomaly_detector(settings)))
 
 
 @pytest.fixture

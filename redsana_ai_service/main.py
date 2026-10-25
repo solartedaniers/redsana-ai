@@ -12,7 +12,7 @@ from redsana_ai_service.routers import anomaly, briefing, chat, health, outage
 
 def create_app(settings: ServiceSettings | None = None, readiness: ServiceReadiness | None = None) -> FastAPI:
     settings = settings or get_settings()
-    readiness = readiness or ServiceReadiness(build_anomaly_detector())
+    readiness = readiness or ServiceReadiness(build_anomaly_detector(settings))
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:

@@ -10,7 +10,7 @@ Además, este repo trae un **servicio HTTP** aparte (`redsana_ai_service`, FastA
 
 | Repositorio | Qué contiene |
 |---|---|
-| [redsana-frontend](https://github.com/solartedaniers/redsana-frontend) | App Angular + Tauri (web en Vercel, instalador en Releases) |
+| [redsana-frontend](https://github.com/solartedaniers/redsana-frontend) | App Angular + Tauri (web en [www.app-redsana.com](https://www.app-redsana.com), instalador en Releases) |
 | [redsana-backend](https://github.com/solartedaniers/redsana-backend) | API FastAPI desplegada en Render; instala `redsana-ai` por tag |
 | [redsana-ai](https://github.com/solartedaniers/redsana-ai) (este) | Paquete Python con el asistente y los detectores, y su servicio HTTP |
 
